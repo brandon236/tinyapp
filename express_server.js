@@ -8,7 +8,7 @@ app.set("view engine", "ejs");
 //console.log([...Array(6)].map(i=>(~~(Math.random()*36)).toString(36)).join(''));
 
 function generateRandomString() {
-  return [...Array(6)].map(i=>(~~(Math.random()*36)).toString(36)).join('');
+  return Math.random().toString(16).slice(2, 8);
 }
 
 const urlDatabase = {
