@@ -67,6 +67,10 @@ app.get("/u/:shortURL", (req, res) => {
   res.redirect(longURL);
 });
 
+app.get("/register", (req, res) => {
+  res.render("register_user");
+});
+
 app.post("/urls/:shortURL", (req, res) => {
   const newURL = req.body.newURL;
   urlDatabase[req.params.shortURL] = newURL;
