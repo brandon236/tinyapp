@@ -117,6 +117,17 @@ app.get("/register", (req, res) => {
   res.render("register_user", templateVars);
 });
 
+app.get("/login", (req, res) => {
+  if (users[req.cookies['user_id']] !== undefined) {
+    const userObject = users[req.cookies['user_id']]
+    userEmail = userObject["email"];
+  } else {
+    userEmail = undefined;
+  }
+  let templateVars = { username: userEmail }
+  res.render("login_user", templateVars);
+});
+
 app.post("/urls/:shortURL", (req, res) => {
   const newURL = req.body.newURL;
   urlDatabase[req.params.shortURL] = newURL;
@@ -147,11 +158,10 @@ app.post("/logout", (req, res) => {
 
 app.post("/register", (req, res) => {
   if (req.body.email === "" || req.body.password === "") {
-    res.status(400).send("The email or password fields are empty");
+    return res.status(400).send("The email or password fields are empty");
   }
   if (findEmail(req.body.email)) {
-    res.status(400).send("The email is already in use");
-    res.redirect(`/urls`)
+    return res.status(400).send("The email is already in use");
   }
   const newID = generateRandomString()
   users[newID] = {
