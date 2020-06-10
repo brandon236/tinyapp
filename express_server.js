@@ -72,6 +72,8 @@ app.get("/urls", (req, res) => {
   if (users[req.cookies['user_id']] !== undefined) {
     const userObject = users[req.cookies['user_id']]
     userEmail = userObject["email"];
+  } else {
+    userEmail = undefined;
   }
   let templateVars = { username: userEmail, urls: urlDatabase };
   res.render("urls_index", templateVars);
@@ -81,6 +83,8 @@ app.get("/urls/new", (req, res) => {
   if (users[req.cookies['user_id']] !== undefined) {
     const userObject = users[req.cookies['user_id']]
     userEmail = userObject["email"];
+  } else {
+    userEmail = undefined;
   }
   let templateVars = { username: userEmail };
   res.render("urls_new", templateVars);
@@ -90,6 +94,8 @@ app.get("/urls/:shortURL", (req, res) => {
   if (users[req.cookies['user_id']] !== undefined) {
     const userObject = users[req.cookies['user_id']]
     userEmail = userObject["email"];
+  } else {
+    userEmail = undefined;
   }
   let templateVars = { username: userEmail, shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
   res.render("urls_show", templateVars);
@@ -104,6 +110,8 @@ app.get("/register", (req, res) => {
   if (users[req.cookies['user_id']] !== undefined) {
     const userObject = users[req.cookies['user_id']]
     userEmail = userObject["email"];
+  } else {
+    userEmail = undefined;
   }
   let templateVars = { username: userEmail }
   res.render("register_user", templateVars);
