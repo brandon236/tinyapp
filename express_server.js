@@ -16,8 +16,8 @@ function generateRandomString() {
 }
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  "b2xVn2": { longURL: "https://www.tsn.ca", userID: "userRandomID" },
+  "9sm5xK": { longURL: "https://www.google.ca", userID: "user2RandomID" }
 };
 
 const users = { 
@@ -55,8 +55,16 @@ const findEmailAndPassword = function (email, password) {
   return false;
 }
 
+const urlsForUser = function (id) {
+  const tempURLS = {};
+  for (item in urlDatabase) {
+    if (urlDatabase[item]['userID'] === id) {
+      tempURLS[item] = urlDatabase[item]['longURL'];
+    }
+  }
+  return tempURLS;
+}
 
-let userEmail = undefined;
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -69,9 +77,9 @@ app.get("/urls.json", (req, res) => {
 app.get("/hello", (req, res) => {
   if (users[req.cookies['user_id']] !== undefined) {
     const userObject = users[req.cookies['user_id']]
-    userEmail = userObject["email"];
+    let userEmail = userObject["email"];
   } else {
-    userEmail = undefined;
+    let userEmail = undefined;
   }
   let templateVars = { user_id: userEmail, urls: urlDatabase };
   res.render("urls_index", templateVars);
@@ -87,44 +95,53 @@ app.get("/fetch", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
+  let useEmail = undefined;
   if (users[req.cookies['user_id']] !== undefined) {
     const userObject = users[req.cookies['user_id']]
     userEmail = userObject["email"];
   } else {
     userEmail = undefined;
   }
-  let templateVars = { user_id: userEmail, urls: urlDatabase };
+  console.log(req.cookies['user_id'])
+  const userURLS = urlsForUser(req.cookies['user_id']);
+  let templateVars = { user_id: userEmail, urls: userURLS };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
+  let useEmail = undefined;
   if (users[req.cookies['user_id']] !== undefined) {
     const userObject = users[req.cookies['user_id']]
     userEmail = userObject["email"];
   } else {
     userEmail = undefined;
+    res.redirect('/login');
   }
   let templateVars = { user_id: userEmail };
   res.render("urls_new", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
+  let useEmail = undefined;
   if (users[req.cookies['user_id']] !== undefined) {
     const userObject = users[req.cookies['user_id']]
     userEmail = userObject["email"];
   } else {
     userEmail = undefined;
   }
-  let templateVars = { username: userEmail, shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
+  let templateVars = { user_id: userEmail, shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]['longURL'] };
+  console.log(urlDatabase[req.params.shortURL]['longURL']);
   res.render("urls_show", templateVars);
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
+  const longURL = urlDatabase[req.params.shortURL]['longURL'];
+  console.log(req.params.shortURL);
   res.redirect(longURL);
 });
 
 app.get("/register", (req, res) => {
+  let useEmail = undefined;
   if (users[req.cookies['user_id']] !== undefined) {
     const userObject = users[req.cookies['user_id']]
     userEmail = userObject["email"];
@@ -136,6 +153,7 @@ app.get("/register", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
+  let useEmail = undefined;
   if (users[req.cookies['user_id']] !== undefined) {
     const userObject = users[req.cookies['user_id']]
     userEmail = userObject["email"];
@@ -147,14 +165,15 @@ app.get("/login", (req, res) => {
 });
 
 app.post("/urls/:shortURL", (req, res) => {
-  const newURL = req.body.newURL;
+  const newURL = { longURL: req.body.newURL, userID: req.cookies['user_id'] };
   urlDatabase[req.params.shortURL] = newURL;
   res.redirect(`/urls`);
 });
 
 app.post("/urls", (req, res) => {
   const short = generateRandomString();
-  urlDatabase[short] = req.body['longURL'];
+  urlDatabase[short] = { longURL: req.body['longURL'], userID: req.cookies['user_id'] };
+  console.log(urlDatabase);
   res.redirect(`/urls/${short}`);
 });
 
@@ -172,13 +191,7 @@ app.post("/login", (req, res) => {
   if (!findEmailAndPassword(newEmail, newPassword)) {
     return res.status(403).send("The email or password is not correct");
   }
-  const newID = generateRandomString()
-  users[newID] = {
-    id: newID,
-    email: newEmail,
-    password: newPassword
-  }
-  res.cookie('user_id', newID);
+  res.cookie('user_id', userEmails);
   res.redirect(`/urls`);
 });
 
