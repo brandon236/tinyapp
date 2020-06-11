@@ -44,6 +44,18 @@ const findEmail = function (email) {
 }
 
 
+const findEmailAndPassword = function (email, password) {
+  for (const item in users) {
+    if (users[item]['email'] === email) {
+      if (users[item]['password'] === password) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+
 let userEmail = undefined;
 
 app.get("/", (req, res) => {
@@ -55,7 +67,13 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/hello", (req, res) => {
-  let templateVars = { username: req.cookies["username"], urls: urlDatabase };
+  if (users[req.cookies['user_id']] !== undefined) {
+    const userObject = users[req.cookies['user_id']]
+    userEmail = userObject["email"];
+  } else {
+    userEmail = undefined;
+  }
+  let templateVars = { user_id: userEmail, urls: urlDatabase };
   res.render("urls_index", templateVars);
 });
 
@@ -75,7 +93,7 @@ app.get("/urls", (req, res) => {
   } else {
     userEmail = undefined;
   }
-  let templateVars = { username: userEmail, urls: urlDatabase };
+  let templateVars = { user_id: userEmail, urls: urlDatabase };
   res.render("urls_index", templateVars);
 });
 
@@ -86,7 +104,7 @@ app.get("/urls/new", (req, res) => {
   } else {
     userEmail = undefined;
   }
-  let templateVars = { username: userEmail };
+  let templateVars = { user_id: userEmail };
   res.render("urls_new", templateVars);
 });
 
@@ -113,7 +131,7 @@ app.get("/register", (req, res) => {
   } else {
     userEmail = undefined;
   }
-  let templateVars = { username: userEmail }
+  let templateVars = { user_id: userEmail }
   res.render("register_user", templateVars);
 });
 
@@ -124,7 +142,7 @@ app.get("/login", (req, res) => {
   } else {
     userEmail = undefined;
   }
-  let templateVars = { username: userEmail }
+  let templateVars = { user_id: userEmail }
   res.render("login_user", templateVars);
 });
 
@@ -146,8 +164,21 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  const newUser = req.body.username;
-  res.cookie('username', newUser);
+  const newEmail = req.body.email;
+  const newPassword = req.body.password;
+  if (newEmail === "" || newPassword === "") {
+    return res.status(403).send("The email or password fields are empty");
+  }
+  if (!findEmailAndPassword(newEmail, newPassword)) {
+    return res.status(403).send("The email or password is not correct");
+  }
+  const newID = generateRandomString()
+  users[newID] = {
+    id: newID,
+    email: newEmail,
+    password: newPassword
+  }
+  res.cookie('user_id', newID);
   res.redirect(`/urls`);
 });
 
