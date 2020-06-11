@@ -43,7 +43,7 @@ const findEmail = function (email) {
   return false;
 }
 
-
+//Finds both the email and password for a specified used
 const findEmailAndPassword = function (email, password) {
   for (const item in users) {
     if (users[item]['email'] === email) {
@@ -55,6 +55,7 @@ const findEmailAndPassword = function (email, password) {
   return false;
 }
 
+//The output will be in the same format as the original urlDatabase
 const urlsForUser = function (id) {
   const tempURLS = {};
   for (item in urlDatabase) {
@@ -63,6 +64,15 @@ const urlsForUser = function (id) {
     }
   }
   return tempURLS;
+}
+
+const findID = function (email) {
+  for (item in users) {
+    if (users[item]['email'] === email) {
+      return users[item]['id']
+    }
+  }
+  return false;
 }
 
 
@@ -109,7 +119,7 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  let useEmail = undefined;
+  let userEmail = undefined;
   if (users[req.cookies['user_id']] !== undefined) {
     const userObject = users[req.cookies['user_id']]
     userEmail = userObject["email"];
@@ -122,6 +132,9 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
+  if ((urlDatabase[req.params.shortURL]['userID']) !== (req.cookies['user_id'])) {
+    res.redirect('/urls');
+  }
   let useEmail = undefined;
   if (users[req.cookies['user_id']] !== undefined) {
     const userObject = users[req.cookies['user_id']]
@@ -165,6 +178,9 @@ app.get("/login", (req, res) => {
 });
 
 app.post("/urls/:shortURL", (req, res) => {
+  if ((urlDatabase[req.params.shortURL]['userID']) !== (req.cookies['user_id'])) {
+    res.redirect('/urls');
+  }
   const newURL = { longURL: req.body.newURL, userID: req.cookies['user_id'] };
   urlDatabase[req.params.shortURL] = newURL;
   res.redirect(`/urls`);
@@ -178,6 +194,9 @@ app.post("/urls", (req, res) => {
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
+  if ((urlDatabase[req.params.shortURL]['userID']) !== (req.cookies['user_id'])) {
+    res.redirect('/urls');
+  }
   delete urlDatabase[req.params.shortURL];
   res.redirect(`/urls`);
 });
@@ -191,7 +210,7 @@ app.post("/login", (req, res) => {
   if (!findEmailAndPassword(newEmail, newPassword)) {
     return res.status(403).send("The email or password is not correct");
   }
-  res.cookie('user_id', userEmails);
+  res.cookie('user_id', findID(newEmail));
   res.redirect(`/urls`);
 });
 
