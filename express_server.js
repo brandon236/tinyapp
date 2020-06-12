@@ -3,6 +3,7 @@ const app = express();
 const PORT = 8080;
 const cookieParser = require('cookie-parser')
 const bodyParser = require("body-parser");
+const bcrypt = require('bcrypt');
 
 
 app.use(cookieParser());
@@ -47,7 +48,7 @@ const findEmail = function (email) {
 const findEmailAndPassword = function (email, password) {
   for (const item in users) {
     if (users[item]['email'] === email) {
-      if (users[item]['password'] === password) {
+      if (bcrypt.compareSync(password, users[item]['password'])) {
         return true;
       }
     }
@@ -112,7 +113,6 @@ app.get("/urls", (req, res) => {
   } else {
     userEmail = undefined;
   }
-  console.log(req.cookies['user_id'])
   const userURLS = urlsForUser(req.cookies['user_id']);
   let templateVars = { user_id: userEmail, urls: userURLS };
   res.render("urls_index", templateVars);
@@ -143,13 +143,11 @@ app.get("/urls/:shortURL", (req, res) => {
     userEmail = undefined;
   }
   let templateVars = { user_id: userEmail, shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]['longURL'] };
-  console.log(urlDatabase[req.params.shortURL]['longURL']);
   res.render("urls_show", templateVars);
 });
 
 app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL]['longURL'];
-  console.log(req.params.shortURL);
   res.redirect(longURL);
 });
 
@@ -189,7 +187,6 @@ app.post("/urls/:shortURL", (req, res) => {
 app.post("/urls", (req, res) => {
   const short = generateRandomString();
   urlDatabase[short] = { longURL: req.body['longURL'], userID: req.cookies['user_id'] };
-  console.log(urlDatabase);
   res.redirect(`/urls/${short}`);
 });
 
@@ -227,10 +224,11 @@ app.post("/register", (req, res) => {
     return res.status(400).send("The email is already in use");
   }
   const newID = generateRandomString()
+  const hashedPassword = bcrypt.hashSync(req.body.password, 10);
   users[newID] = {
     id: newID,
     email: req.body.email,
-    password: req.body.password
+    password: hashedPassword
   }
   res.cookie('user_id', newID);
   res.redirect(`/urls`);
