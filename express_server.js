@@ -55,7 +55,9 @@ app.get("/urls", (req, res) => {
     let templateVars = { userId: userEmail, urls: userURLS };
     res.render("urls_index", templateVars);
   } else {
-    return res.status(403).send("User is not logged in.");//If the user is not logged in then return an error
+    res.status(403);
+    let templateVars = { userId: undefined, errorMessage: "Error: User is not logged in." };
+    res.render("user_error", templateVars);//If the user is not logged in then return an error
   }
 });
 
@@ -74,13 +76,27 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:shortURL", (req, res) => {
   if (!URLexists(req.params.shortURL, urlDatabase)) {//If the URL was not found in the database, return an error
-    return res.status(403).send("URL not found.");
+    let userEmail = undefined;
+    if (req.session.userId !== undefined) {//The user could either be logged in or out so I have to make sure the header displays the correct information for both cases.
+      const userObject = users[req.session.userId];
+      userEmail = userObject["email"];
+    }
+      let templateVars = { userId: userEmail, errorMessage: "Error: URL not found." };
+      res.status(403);
+      return res.render("user_error", templateVars);
+
   }
   if (req.session.userId === undefined) {//If the user is not logged in, return an error
-    return res.status(403).send("User not logged in.");
+    let templateVars = { userId: undefined, errorMessage: "Error: User not logged in." };
+    res.status(403);
+    return res.render("user_error", templateVars);
   }
   if ((urlDatabase[req.params.shortURL]['userID']) !== (req.session.userId)) {//If the URL doesn't belong to the current user
-    return res.status(403).send("URL does not belong to the user.");
+    const userObject = users[req.session.userId];
+    let userEmail = userObject["email"];
+    let templateVars = { userId: userEmail, errorMessage: "Error: URL does not belong to the user." };
+    res.status(403);
+    return res.render("user_error", templateVars);
   }
   const userObject = users[req.session.userId];
   let userEmail = userObject["email"];
@@ -92,15 +108,22 @@ app.get("/urls/:shortURL", (req, res) => {
 //Redirects to the long URL
 app.get("/u/:shortURL", (req, res) => {
   if (!URLexists(req.params.shortURL, urlDatabase)) {
-    return res.status(403).send("Short URL not found.");//Returns an error if the URL doesn't exist
+    let userEmail = undefined;
+    if (req.session.userId !== undefined) {//The user could either be logged in or out so I have to make sure the header displays the correct information for both cases.
+      const userObject = users[req.session.userId];
+      userEmail = userObject["email"];
+    }
+    let templateVars = { userId: userEmail, errorMessage: "Error: Short URL not found." };
+    res.status(403)
+    res.render("user_error", templateVars);//Returns an error if the URL doesn't exist
+  } else {
+    const longURL = urlDatabase[req.params.shortURL]['longURL'];
+    res.redirect(longURL);
   }
-  const longURL = urlDatabase[req.params.shortURL]['longURL'];
-  res.redirect(longURL);
 });
 
 
 app.get("/u/:longURL", (req, res) => {
-  console.log(req.params);
   const longURL = urlDatabase[req.params.shortURL]['longURL'];
   res.redirect(longURL);
 });
@@ -128,7 +151,9 @@ app.get("/login", (req, res) => {
 
 app.post("/urls", (req, res) => {
   if (req.session.userId === undefined) {
-    return res.status(403).send("The user is not logged in.");//Returns an error if the user is trying to post without logging in
+    let templateVars = { userId: undefined, errorMessage: "Error: The user is not logged in." };
+    res.status(403);
+    res.render("user_error", templateVars);//Returns an error if the user is trying to post without logging in
   }
   const short = generateRandomString();//New 6 character string for the shortened URL
   urlDatabase[short] = { longURL: req.body['longURL'], userID: req.session.userId };
@@ -138,10 +163,16 @@ app.post("/urls", (req, res) => {
 
 app.post("/urls/:shortURL", (req, res) => {
   if (req.session.userId === undefined) {
-    return res.status(403).send("The user is not logged in.");
+    let templateVars = { userId: undefined, errorMessage: "Error: The user is not logged in." };
+    res.status(403);
+    res.render("user_error", templateVars);
   }
   if ((urlDatabase[req.params.shortURL]['userID']) !== (req.session.userId)) {//Checks whether or not the URL belongs to the user
-    return res.status(403).send("The URL does not belong to the current user.");
+    const userObject = users[req.session.userId];
+    let userEmail = userObject["email"];
+    let templateVars = { userId: userEmail, errorMessage: "Error: The URL does not belong to the current user." };
+    res.status(403);
+    res.render("user_error", templateVars);
   }
   const newURL = { longURL: req.body.newURL, userID: req.session.userId };
   urlDatabase[req.params.shortURL] = newURL;
@@ -150,8 +181,18 @@ app.post("/urls/:shortURL", (req, res) => {
 
 
 app.post("/urls/:shortURL/delete", (req, res) => {
+  //Checks if the user is logged in and the URL belongs to the user
+  if (req.session.userId === undefined) {
+    let templateVars = { userId: undefined, errorMessage: "Error: The user is not logged in." };
+    res.status(403);
+    res.render("user_error", templateVars);
+  }
   if ((urlDatabase[req.params.shortURL]['userID']) !== (req.session.userId)) {
-    return res.redirect('/urls');
+    const userObject = users[req.session.userId];
+    let userEmail = userObject["email"];
+    let templateVars = { userId: userEmail, errorMessage: "Error: The URL does not belong to the current user." };
+    res.status(403);
+    res.render("user_error", templateVars);
   }
   delete urlDatabase[req.params.shortURL];
   res.redirect(`/urls`);
@@ -162,10 +203,14 @@ app.post("/login", (req, res) => {
   const newEmail = req.body.email;
   const newPassword = req.body.password;
   if (newEmail === "" || newPassword === "") {//Checks if either the email or password fields are empty
-    return res.status(403).send("The email or password fields are empty");
+    let templateVars = { userId: undefined, errorMessage: "Error: The email or password fields are empty." };
+    res.status(403);
+    return res.render("user_error", templateVars);
   }
   if (!findEmailAndPassword(newEmail, newPassword, users)) {//Checks if the email and password combination are in the database
-    return res.status(403).send("The email or password is not correct");
+    let templateVars = { userId: undefined, errorMessage: "Error: The email or password is not correct." };
+    res.status(403);
+    return res.render("user_error", templateVars);
   }
   req.session.userId = getUserByEmail(newEmail, users);
   res.redirect(`/urls`);
@@ -180,10 +225,14 @@ app.post("/logout", (req, res) => {
 
 app.post("/register", (req, res) => {
   if (req.body.email === "" || req.body.password === "") {
-    return res.status(400).send("The email or password fields are empty");
+    let templateVars = { userId: undefined, errorMessage: "Error: The email or password fields are empty." };
+    res.status(403);
+    return res.render("user_error", templateVars);
   }
   if (findEmail(req.body.email, users)) {//Checks to see if the email is already in the database
-    return res.status(400).send("The email is already in use");
+    let templateVars = { userId: undefined, errorMessage: "Error: The email is already in use." };
+    res.status(403);
+    return res.render("user_error", templateVars);
   }
   const newID = generateRandomString();
   const hashedPassword = bcrypt.hashSync(req.body.password, 10);//Encrypts the password
