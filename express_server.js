@@ -81,9 +81,9 @@ app.get("/urls/:shortURL", (req, res) => {
       const userObject = users[req.session.userId];
       userEmail = userObject["email"];
     }
-      let templateVars = { userId: userEmail, errorMessage: "Error: URL not found." };
-      res.status(403);
-      return res.render("user_error", templateVars);
+    let templateVars = { userId: userEmail, errorMessage: "Error: URL not found." };
+    res.status(403);
+    return res.render("user_error", templateVars);
 
   }
   if (req.session.userId === undefined) {//If the user is not logged in, return an error
@@ -114,7 +114,7 @@ app.get("/u/:shortURL", (req, res) => {
       userEmail = userObject["email"];
     }
     let templateVars = { userId: userEmail, errorMessage: "Error: Short URL not found." };
-    res.status(403)
+    res.status(403);
     res.render("user_error", templateVars);//Returns an error if the URL doesn't exist
   } else {
     const longURL = urlDatabase[req.params.shortURL]['longURL'];
