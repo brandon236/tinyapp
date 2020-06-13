@@ -8,9 +8,9 @@
       <div class="navbar-nav">
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
-        <% if(user_id !== undefined){ %>
+        <% if(userId !== undefined){ %>
           <form method="POST" action= "/logout">
-          <label for="loginStatus">Logged In As: <%= user_id %></label>
+          <label for="loginStatus">Logged In As: <%= userId %></label>
           <button type="submit" class="btn btn-info">Logout</button>
           </form>
         <% } else { %>
